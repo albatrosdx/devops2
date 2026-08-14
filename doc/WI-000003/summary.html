@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      WI-000003 実行サマリー — 見積・見積明細オブジェクトと見積書PDF出力LWC
+    </title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --fg: #16202c;
+        --muted: #5c6b7a;
+        --line: #d8dde3;
+        --panel: #f4f6f8;
+        --accent: #0b5cab;
+        --ok: #1c7c4a;
+        --warn: #8a5a00;
+        --ng: #a52020;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #12171d;
+          --fg: #e6ebf1;
+          --muted: #9aa7b4;
+          --line: #2c353f;
+          --panel: #1a212a;
+          --accent: #6fb3f5;
+          --ok: #56c98a;
+          --warn: #e0b050;
+          --ng: #f08a8a;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--fg);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN",
+          "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
+        line-height: 1.75;
+        font-size: 15px;
+      }
+      main {
+        max-width: 60rem;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 1.6rem;
+        line-height: 1.4;
+        margin: 0 0 0.3rem;
+      }
+      h2 {
+        font-size: 1.2rem;
+        margin: 2.75rem 0 0.85rem;
+        padding-bottom: 0.35rem;
+        border-bottom: 2px solid var(--line);
+      }
+      h3 {
+        font-size: 1rem;
+        margin: 1.75rem 0 0.5rem;
+        color: var(--muted);
+      }
+      p,
+      ul,
+      ol {
+        margin: 0.6rem 0;
+      }
+      li {
+        margin: 0.25rem 0;
+      }
+      .sub {
+        color: var(--muted);
+        margin: 0 0 1.5rem;
+      }
+      .scroll {
+        overflow-x: auto;
+        margin: 0.9rem 0;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 30rem;
+        font-size: 0.92rem;
+      }
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 0.5rem 0.7rem;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: var(--panel);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      code {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 0.08em 0.35em;
+        font-size: 0.88em;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      pre {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 0.8rem 1rem;
+        overflow-x: auto;
+        font-size: 0.85rem;
+        line-height: 1.6;
+      }
+      pre code {
+        background: none;
+        border: none;
+        padding: 0;
+      }
+      .badge {
+        display: inline-block;
+        padding: 0.1rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border: 1px solid currentColor;
+      }
+      .ok {
+        color: var(--ok);
+      }
+      .warn {
+        color: var(--warn);
+      }
+      .ng {
+        color: var(--ng);
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--accent);
+        border-radius: 4px;
+        padding: 0.85rem 1.1rem;
+        margin: 1rem 0;
+      }
+      .card.warn {
+        border-left-color: var(--warn);
+      }
+      .card h3 {
+        margin-top: 0;
+        color: var(--fg);
+      }
+      .grid {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+        margin: 1rem 0;
+      }
+      .stat {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 0.8rem 0.9rem;
+      }
+      .stat .n {
+        font-size: 1.45rem;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      .stat .l {
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      a {
+        color: var(--accent);
+      }
+      footer {
+        margin-top: 3.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>WI-000003 実行サマリー</h1>
+      <p class="sub">
+        見積・見積明細オブジェクトと見積書PDF出力LWCの作成 —
+        <span class="badge ok">本番昇格完了</span>
+      </p>
+
+      <div class="grid">
+        <div class="stat">
+          <div class="n ok">11/11</div>
+          <div class="l">Apexテスト</div>
+        </div>
+        <div class="stat">
+          <div class="n ok">9/9</div>
+          <div class="l">Jestテスト</div>
+        </div>
+        <div class="stat">
+          <div class="n ok">99%</div>
+          <div class="l">Apexカバレッジ</div>
+        </div>
+        <div class="stat">
+          <div class="n ok">0件</div>
+          <div class="l">セキュリティ指摘</div>
+        </div>
+        <div class="stat">
+          <div class="n ok">55</div>
+          <div class="l">本番デプロイ<br />コンポーネント</div>
+        </div>
+      </div>
+
+      <h2>1. 作業項目</h2>
+      <div class="scroll">
+        <table>
+          <tr>
+            <th>作業項目</th>
+            <td>WI-000003（<code>1fkgL000000ZZKfQAO</code>）</td>
+          </tr>
+          <tr>
+            <th>件名</th>
+            <td>見積・見積明細オブジェクトと見積書PDF出力LWCの作成</td>
+          </tr>
+          <tr>
+            <th>ブランチ</th>
+            <td><code>WI-000003</code></td>
+          </tr>
+          <tr>
+            <th>プロジェクト</th>
+            <td>Devops2（<code>1QggL0000001F9tSAE</code>）</td>
+          </tr>
+          <tr>
+            <th>パイプライン</th>
+            <td>Devops-pipeline → ステージ「本番」</td>
+          </tr>
+          <tr>
+            <th>開発組織</th>
+            <td><code>devops2_scr</code>（Scratch）</td>
+          </tr>
+          <tr>
+            <th>昇格先</th>
+            <td><code>prod_devops2</code></td>
+          </tr>
+          <tr>
+            <th>PR</th>
+            <td>
+              <a href="https://github.com/albatrosdx/devops2/pull/4">#4</a>
+            </td>
+          </tr>
+          <tr>
+            <th>最終ステータス</th>
+            <td>CLOSED（本番ステージ）</td>
+          </tr>
+        </table>
+      </div>
+
+      <h2>2. 要件</h2>
+      <ol>
+        <li>
+          見積（<code>Quote__c</code>）・見積明細（<code>QuoteLineItem__c</code>）を<strong>カスタムオブジェクトとして新規作成</strong>する（標準Quoteは使わない）
+        </li>
+        <li>一般的な見積書に記載される項目を両オブジェクトに追加する</li>
+        <li>
+          見積書を<strong>PDF出力するLWC</strong>を作成する。<strong>LWC単体で完結</strong>させる（Visualforce不使用）
+        </li>
+        <li>
+          そのLWCを見積オブジェクトの<strong>アクション</strong>として登録する
+        </li>
+        <li>
+          消費税は<strong>明細ごとの税率</strong>を持たせ、<strong>税率別に集計</strong>する（軽減税率・インボイス制度対応）
+        </li>
+      </ol>
+
+      <h2>3. 設計上の主な判断</h2>
+
+      <h3>PDF生成方式 — 実測で決定</h3>
+      <p>
+        「LWCで実現できないか調査して」というご要望を受け、着手前に実機で検証しました。
+      </p>
+      <div class="scroll">
+        <table>
+          <tr>
+            <th>フォント構成</th>
+            <th>TTF</th>
+            <th>base64</th>
+            <th>静的リソース5MB上限</th>
+          </tr>
+          <tr>
+            <td>Noto Sans JP 全CJK（約2万字）</td>
+            <td>4.17 MB</td>
+            <td>5.57 MB</td>
+            <td class="ng">超過</td>
+          </tr>
+          <tr>
+            <td><strong>JIS X 0208（第一・第二水準）7,423字</strong></td>
+            <td><strong>2.19 MB</strong></td>
+            <td><strong>2.92 MB</strong></td>
+            <td class="ok">収まる</td>
+          </tr>
+        </table>
+      </div>
+      <ul>
+        <li>
+          jsPDF は <strong>v3以降がLocker環境で動作しない</strong>ため
+          <strong>2.5.1 に固定</strong>
+        </li>
+        <li>
+          日本語フォントは JIS X 0208 へサブセット化。文字集合は Python の
+          <code>cp932</code>
+          コーデックから機械的に導出しており、外部の文字リストに依存せず再現可能
+        </li>
+        <li>
+          生成手順は
+          <code>scripts/font/build-japanese-font.py</code>
+          に保存済み。ライセンスは SIL OFL 1.1 で再配布可
+        </li>
+        <li>
+          約2.9MBのフォントはボタン押下時に<strong>遅延ロード</strong>（モーダル表示は即座）
+        </li>
+        <li>
+          html2canvas方式は文字選択・検索ができず、<code>window.print()</code>
+          はPDFを組織内に保存できないため不採用
+        </li>
+      </ul>
+
+      <h3>消費税の端数処理</h3>
+      <p>
+        インボイス制度は「税率ごとに1回の端数処理」を求めるため、明細ごとに切り捨てるのではなく、<strong>税率別の課税対象額を積み上げ集計してから切り捨てる</strong>構成にしました。明細の
+        <code>TaxAmount__c</code> は表示用で、合計計算には使いません。
+      </p>
+      <pre><code>TaxableBase10__c = SUM(明細.Amount__c) WHERE TaxRate__c = '10%'   ← 積み上げ集計
+TaxAmount10__c   = FLOOR(TaxableBase10__c * 0.1)                  ← 数式
+TotalAmount__c   = Subtotal__c + TaxAmount10__c + TaxAmount8__c</code></pre>
+      <p>
+        Apexテストには、単価1,105と2,105の10%明細2行（明細ごと切り捨てなら320円、税率ごとなら321円）でこの差を検証するテストを含めています。
+      </p>
+
+      <h3>その他</h3>
+      <ul>
+        <li>
+          自社情報はハードコードせず、カスタムメタデータ型
+          <code>QuoteIssuer__mdt</code> に分離
+        </li>
+        <li>
+          Apexは <code>with sharing</code> +
+          <code>WITH USER_MODE</code
+          >。権限不足時の内部エラーは利用者向け文言に置換
+        </li>
+      </ul>
+
+      <h2>4. 成果物</h2>
+      <div class="scroll">
+        <table>
+          <tr>
+            <th>種別</th>
+            <th>名前</th>
+            <th>内容</th>
+          </tr>
+          <tr>
+            <td>CustomObject</td>
+            <td><code>Quote__c</code></td>
+            <td>
+              見積。20項目（取引先/件名/見積日/有効期限/納期/納入場所/支払条件/備考＋税率別集計）
+            </td>
+          </tr>
+          <tr>
+            <td>CustomObject</td>
+            <td><code>QuoteLineItem__c</code></td>
+            <td>
+              見積明細。10項目（品名/数量/単位/単価/金額/税率/摘要）。見積への主従関係
+            </td>
+          </tr>
+          <tr>
+            <td>CustomMetadata</td>
+            <td><code>QuoteIssuer__mdt</code></td>
+            <td>自社（発行元）情報＋既定レコード1件</td>
+          </tr>
+          <tr>
+            <td>ApexClass</td>
+            <td><code>QuotePdfController</code></td>
+            <td>見積＋明細＋発行元情報を1回で返す</td>
+          </tr>
+          <tr>
+            <td>ApexClass</td>
+            <td><code>QuotePdfControllerTest</code></td>
+            <td>テスト10メソッド</td>
+          </tr>
+          <tr>
+            <td>LWC</td>
+            <td><code>quotePdfGenerator</code></td>
+            <td>見積書プレビュー＋PDF生成・ダウンロード</td>
+          </tr>
+          <tr>
+            <td>StaticResource</td>
+            <td><code>jspdf</code></td>
+            <td>jsPDF 2.5.1 UMD</td>
+          </tr>
+          <tr>
+            <td>StaticResource</td>
+            <td><code>NotoSansJPNormal</code></td>
+            <td>日本語フォント base64（2.92MB）</td>
+          </tr>
+          <tr>
+            <td>QuickAction</td>
+            <td><code>Quote__c.QuotePdfAction</code></td>
+            <td>「見積書PDF出力」</td>
+          </tr>
+          <tr>
+            <td>Layout</td>
+            <td>見積 / 見積明細</td>
+            <td>ページレイアウト2件</td>
+          </tr>
+          <tr>
+            <td>CustomTab</td>
+            <td><code>Quote__c</code></td>
+            <td>見積タブ</td>
+          </tr>
+          <tr>
+            <td>ListView</td>
+            <td><code>Quote__c.All</code></td>
+            <td>すべての見積</td>
+          </tr>
+          <tr>
+            <td>PermissionSet</td>
+            <td><code>QuoteManagement</code></td>
+            <td>見積管理</td>
+          </tr>
+          <tr>
+            <td>Profile</td>
+            <td><code>Admin</code></td>
+            <td>
+              新規オブジェクト・項目・クラス・タブ・レイアウトの権限を追加
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <h2>5. テスト結果</h2>
+      <div class="scroll">
+        <table>
+          <tr>
+            <th>種別</th>
+            <th>結果</th>
+            <th>詳細</th>
+          </tr>
+          <tr>
+            <td>Apex（Scratch）</td>
+            <td class="ok">11/11 パス</td>
+            <td>
+              <code>QuotePdfController</code> カバレッジ 99%、組織全体 93%
+            </td>
+          </tr>
+          <tr>
+            <td>Jest</td>
+            <td class="ok">9/9 パス</td>
+            <td>
+              明細描画・合計金額・敬称補完・日付書式・8%行の出し分け・wireエラー・遅延ロード
+            </td>
+          </tr>
+          <tr>
+            <td>本番 check-only 検証</td>
+            <td class="ok">成功</td>
+            <td>55/55 コンポーネント、テスト 10/10 パス（組織は未変更）</td>
+          </tr>
+        </table>
+      </div>
+
+      <h2>6. レビュー結果</h2>
+
+      <h3>セキュリティレビュー — 要対処 0件</h3>
+      <ul>
+        <li>
+          <strong>CRUD/FLS</strong>: 全SOQLに <code>WITH USER_MODE</code>。<code
+            >QueryException</code
+          >
+          を捕捉して内部情報の漏洩を防止
+        </li>
+        <li>
+          <strong>IDOR</strong>:
+          <code>getSobjectType()</code>
+          で見積以外のIDを拒否。明細は親IDで絞り込み
+        </li>
+        <li>
+          <strong>XSS</strong>: 全てマスタッシュ構文で自動エスケープ。<code
+            >lwc:dom="manual"</code
+          >
+          / <code>innerHTML</code> / <code>eval</code> の使用ゼロ
+        </li>
+        <li>
+          <strong>権限セット</strong>: <code>modifyAllRecords</code> /
+          <code>viewAllRecords</code> ともfalse、<code>userPermissions</code>
+          なし
+        </li>
+        <li>
+          <strong>サードパーティ</strong>: <code>jspdf.js</code> を npm 公式
+          tarball とバイト比較し
+          <strong>SHA-256 完全一致</strong>（<code>98ccf17a…</code>）。改変なし
+        </li>
+        <li>
+          <strong>機密情報</strong>:
+          該当ゼロ。カスタムメタデータの初期値は明らかなダミーデータ
+        </li>
+      </ul>
+
+      <h3>Salesforce Code Analyzer — 実質指摘2件、いずれも修正済み</h3>
+      <div class="scroll">
+        <table>
+          <tr>
+            <th>対応</th>
+            <th>ルール</th>
+            <th>内容</th>
+          </tr>
+          <tr>
+            <td class="ok">修正済</td>
+            <td><code>ApexCRUDViolation</code></td>
+            <td>
+              <code>loadIssuer()</code> のカスタムメタデータ照会に
+              <code>WITH SYSTEM_MODE</code> を明示
+            </td>
+          </tr>
+          <tr>
+            <td class="ok">修正済</td>
+            <td><code>EagerlyLoadedDescribeSObjectResult</code></td>
+            <td>
+              テストの <code>getDescribe()</code> を
+              <code>getDescribe(SObjectDescribeOptions.DEFERRED)</code> に変更
+            </td>
+          </tr>
+        </table>
+      </div>
+      <p>
+        検出は全117件でしたが、残る115件は誤検知55件（PMDの旧JSパーサがES2015+のクラスフィールドを解釈できない
+        <code>GlobalVariable</code>
+        43件ほか）、意図的な設計14件、低優先度のドキュメント不足45件、環境エラー1件です。<code>retire-js</code>（脆弱ライブラリ）と
+        <code>CPD</code>（コード重複）はいずれも0件でした。
+      </p>
+      <p class="warn">
+        補足:
+        ESLintエンジンは設定ファイルがスキャンworkspace外にあるため選択ルール0で実行されませんでした。LWC固有のESLintルールによる検証は結果に含まれていません（ローカルの
+        <code>npx eslint</code> では 0 problems を確認）。
+      </p>
+
+      <h2>7. 途中で発生した問題と対処</h2>
+
+      <div class="card warn">
+        <h3>本番検証でApexテストが10件全滅</h3>
+        <p>
+          Scratch組織では全件パスしていたのに、本番 check-only
+          検証で以下により全滅しました。
+        </p>
+        <pre><code>System.DmlException: Operation failed due to fields being inaccessible on Sobject Quote__c</code></pre>
+        <p>
+          <strong>当初の見立ては誤りでした。</strong
+          >「Scratch組織ではFLSが自動付与される」と判断しましたが、実測により否定されました。真因は次の2つです。
+        </p>
+        <ol>
+          <li>
+            メタデータAPI経由で作成したカスタム項目には、<strong
+              >どのプロファイルにもFLSが付与されない</strong
+            >
+          </li>
+          <li>
+            テストクラスが<strong>実行ユーザーの既存権限に暗黙依存</strong>していた。Scratch組織では開発中に管理者へ
+            <code>QuoteManagement</code>
+            を手動割り当てしていたため通っていただけで、組織差ではなくテストの設計上の欠陥
+          </li>
+        </ol>
+        <p>
+          <strong>対処</strong>: 本番から
+          <code>Admin</code> プロファイルを取得して権限を追加し、テストは
+          <code>QuoteManagement</code> を割り当てた専用ユーザーを作って
+          <code>System.runAs</code> 内で実行するよう修正。再検証で本番
+          55/55・テスト10/10パス。
+        </p>
+      </div>
+
+      <div class="card warn">
+        <h3>QuickActionのスキーマエラー4連続</h3>
+        <p>
+          LWC開発者ガイドの記載どおりに書いたところ、デプロイが4回連続で失敗しました。ガイドの要素名・列挙値が実際のメタデータスキーマと一致していなかったためです。
+        </p>
+        <div class="scroll">
+          <table>
+            <tr>
+              <th>誤り</th>
+              <th>正しい形</th>
+            </tr>
+            <tr>
+              <td><code>&lt;apiVersion&gt;</code></td>
+              <td>無効な要素。省略する</td>
+            </tr>
+            <tr>
+              <td><code>&lt;targetSobjectType&gt;</code></td>
+              <td>
+                <code>&lt;targetObject&gt;</code
+                >。オブジェクト固有ならファイル名でスコープが決まるため省略可
+              </td>
+            </tr>
+            <tr>
+              <td><code>&lt;type&gt;ScreenAction&lt;/type&gt;</code></td>
+              <td>
+                <code>&lt;type&gt;LightningWebComponent&lt;/type&gt;</code
+                >（<code>ScreenAction</code> はLWC側 <code>js-meta.xml</code> の
+                <code>&lt;actionType&gt;</code> の値）
+              </td>
+            </tr>
+            <tr>
+              <td><code>&lt;optionsCreateFeedItem&gt;</code> の省略</td>
+              <td>必須要素</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <h2>8. 未達の項目</h2>
+
+      <div class="card warn">
+        <h3>クイックアクションのレコードページ配置（保留）</h3>
+        <p>
+          <code>QuickAction</code> 自体は作成・本番デプロイ済みですが、<strong
+            >LWCクイックアクションはページレイアウトの
+            <code>&lt;quickActionList&gt;</code> に追加できません</strong
+          >。
+        </p>
+        <pre><code>QuickActionType LightningWebComponent を QuickActionList に追加できません。</code></pre>
+        <p>
+          レコードページに表示するには
+          <strong>FlexiPageの動的アクション</strong
+          >が必要です。<strong>利用者のご判断により本作業では保留</strong>としました。
+        </p>
+        <p>管理者による設定手順（数分）:</p>
+        <ol>
+          <li>見積レコードを開き、[設定] → [編集ページ]</li>
+          <li>
+            ハイライトパネルを選択し、[アクション]
+            を「動的アクションをアップグレード」
+          </li>
+          <li>[アクションを追加] から「見積書PDF出力」を選択</li>
+          <li>[保存] → [有効化] → 組織のデフォルトに設定</li>
+        </ol>
+      </div>
+
+      <h3>その後の検討をおすすめする点</h3>
+      <p>
+        セキュリティ指摘ではなく設計論点として、<code>Quote__c</code> のOWDが
+        Public Read/Write（カスタムオブジェクトの既定値）かつ権限セットで
+        <code>allowDelete=true</code>
+        のため、権限セット保有者は任意の見積を削除でき、主従関係により明細も連鎖削除されます。見積は顧客名・金額・支払条件を含む文書のため、OWDを非公開にして共有ルールで開放する設計が妥当かどうか、業務側とのご確認をおすすめします。本作業ではOWD変更をスコープ外としています。
+      </p>
+
+      <h2>9. 本作業から得た知見のスキルへの反映</h2>
+      <p>
+        今回判明した問題は、オーケストレータースキル
+        <code>dx-devops-workitem-orchestrate</code> に反映済みです（<a
+          href="https://github.com/albatrosdx/devops2/pull/5"
+          >PR #5</a
+        >）。
+      </p>
+      <ul>
+        <li>
+          <strong>メタデータ作成のルール</strong>（新設）—
+          スキーマ確認を先に行う、早期にdry-runデプロイする、検証済みの禁止パターン表、エラーメッセージから原因を引けるGotchas
+        </li>
+        <li>
+          <strong>Adminプロファイルへの権限追加を必須化</strong> —
+          新規オブジェクト・項目を作ったら権限セットだけでは不十分。テストが実行ユーザーの権限に暗黙依存しないことも明記
+        </li>
+        <li>
+          <strong>並列エージェント実行の必須化</strong> —
+          調査・開発に加えテストも必須。ホスト側でAgentツールが抑止される場合は黙って単一スレッド化せずユーザーに許可を求める
+        </li>
+        <li>
+          <strong>本文の日本語化</strong> —
+          他ユーザーへの公開に向けて。トリガー語句は日英両方を維持
+        </li>
+      </ul>
+
+      <h2>10. 実行フェーズの記録</h2>
+      <div class="scroll">
+        <table>
+          <tr>
+            <th>フェーズ</th>
+            <th>内容</th>
+            <th>結果</th>
+          </tr>
+          <tr>
+            <td>1</td>
+            <td>環境安全ゲート（Scratch組織確認・DX MCP接続）</td>
+            <td class="ok">通過</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>作業項目 WI-000003 の作成</td>
+            <td class="ok">完了</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>ローカルworktreeの準備</td>
+            <td class="ok">完了</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>PDF方式の実機調査・要件ヒアリング・設計書承認</td>
+            <td class="ok">承認</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>開発（並列3エージェント）</td>
+            <td class="ok">完了</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>Scratch組織へデプロイ・Apex/Jestテスト</td>
+            <td class="ok">全パス</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>security-review + Code Analyzer + PR#4作成・コメント投稿</td>
+            <td class="ok">完了</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>本番 check-only 検証・昇格承認・昇格</td>
+            <td class="ok">昇格完了</td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>HTMLサマリー出力</td>
+            <td class="ok">本書</td>
+          </tr>
+        </table>
+      </div>
+
+      <footer>
+        WI-000003 実行サマリー / 生成日 2026-08-14 / DevOps Center プロジェクト
+        Devops2
+      </footer>
+    </main>
+  </body>
+</html>
