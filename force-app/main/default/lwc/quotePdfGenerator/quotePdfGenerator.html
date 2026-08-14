@@ -1,0 +1,257 @@
+<template>
+  <div class="slds-is-relative">
+    <!-- 読み込み中 -->
+    <template lwc:if={isLoading}>
+      <div class="slds-is-relative slds-p-vertical_xx-large">
+        <lightning-spinner
+          alternative-text="見積データを読み込み中"
+          size="medium"
+        ></lightning-spinner>
+      </div>
+    </template>
+
+    <!-- エラー -->
+    <template lwc:if={errorMessage}>
+      <div
+        class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small"
+        role="alert"
+        data-id="error-message"
+      >
+        <span class="slds-assistive-text">エラー</span>
+        <lightning-icon
+          icon-name="utility:error"
+          variant="inverse"
+          size="x-small"
+          alternative-text="エラー"
+          class="slds-m-right_x-small"
+        ></lightning-icon>
+        <h2>{errorMessage}</h2>
+      </div>
+    </template>
+
+    <!-- 見積書プレビュー -->
+    <template lwc:if={hasData}>
+      <div class="quote-preview slds-p-around_medium" data-id="preview">
+        <!-- 見出し + 見積番号/見積日 -->
+        <div
+          class="slds-grid slds-grid_align-spread slds-grid_vertical-align-end slds-border_bottom slds-p-bottom_x-small"
+        >
+          <h1 class="quote-preview__title slds-text-heading_large">見積書</h1>
+          <dl class="slds-text-body_small slds-text-align_right">
+            <div class="slds-grid slds-grid_align-end">
+              <dt class="slds-m-right_x-small">見積番号</dt>
+              <dd data-id="quote-number">{quote.quoteNumber}</dd>
+            </div>
+            <div class="slds-grid slds-grid_align-end">
+              <dt class="slds-m-right_x-small">見積日</dt>
+              <dd data-id="quote-date">{quoteDateText}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <!-- 宛名・件名・合計 / 発行元 -->
+        <div class="slds-grid slds-wrap slds-gutters slds-m-top_medium">
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+            <p
+              class="quote-preview__customer slds-text-heading_medium slds-border_bottom slds-p-bottom_xx-small"
+              data-id="customer-name"
+            >
+              {customerNameWithHonorific}
+            </p>
+            <p class="slds-m-top_x-small" data-id="subject">
+              件名: {quote.subject}
+            </p>
+
+            <div
+              class="quote-preview__total slds-box slds-box_x-small slds-m-top_small"
+            >
+              <p class="slds-text-body_small">合計金額(税込)</p>
+              <p class="quote-preview__total-amount" data-id="total-amount">
+                {totalAmountText} 円
+              </p>
+            </div>
+          </div>
+
+          <div
+            class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-text-align_right slds-text-body_small"
+          >
+            <p class="slds-text-heading_small">{issuer.companyName}</p>
+            <template lwc:if={issuer.postalCode}>
+              <p>〒{issuer.postalCode}</p>
+            </template>
+            <p>{issuer.address}</p>
+            <template lwc:if={issuer.phone}>
+              <p>TEL: {issuer.phone}</p>
+            </template>
+            <template lwc:if={issuer.fax}>
+              <p>FAX: {issuer.fax}</p>
+            </template>
+            <template lwc:if={issuer.invoiceRegistrationNumber}>
+              <p>登録番号: {issuer.invoiceRegistrationNumber}</p>
+            </template>
+          </div>
+        </div>
+
+        <!-- 明細 -->
+        <table
+          class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_medium"
+          aria-label="見積明細"
+        >
+          <thead>
+            <tr class="slds-line-height_reset">
+              <th class="slds-text-title_caps" scope="col">
+                <div class="slds-truncate" title="行番号">No.</div>
+              </th>
+              <th class="slds-text-title_caps" scope="col">
+                <div class="slds-truncate" title="品名">品名</div>
+              </th>
+              <th class="slds-text-title_caps" scope="col">
+                <div class="slds-truncate" title="摘要">摘要</div>
+              </th>
+              <th
+                class="slds-text-title_caps slds-text-align_right"
+                scope="col"
+              >
+                <div class="slds-truncate" title="数量">数量</div>
+              </th>
+              <th class="slds-text-title_caps" scope="col">
+                <div class="slds-truncate" title="単位">単位</div>
+              </th>
+              <th
+                class="slds-text-title_caps slds-text-align_right"
+                scope="col"
+              >
+                <div class="slds-truncate" title="単価">単価</div>
+              </th>
+              <th
+                class="slds-text-title_caps slds-text-align_right"
+                scope="col"
+              >
+                <div class="slds-truncate" title="金額">金額</div>
+              </th>
+              <th class="slds-text-title_caps" scope="col">
+                <div class="slds-truncate" title="税率">税率</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <template for:each={printableLines} for:item="line">
+              <tr
+                key={line.recordId}
+                class="slds-hint-parent"
+                data-id="line-row"
+              >
+                <th scope="row">{line.lineNumberText}</th>
+                <td>{line.productName}</td>
+                <td>{line.description}</td>
+                <td class="slds-text-align_right">{line.quantityText}</td>
+                <td>{line.unit}</td>
+                <td class="slds-text-align_right">{line.unitPriceText}</td>
+                <td class="slds-text-align_right">{line.amountText}</td>
+                <td>{line.taxRate}</td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+
+        <!-- 取引条件 + 集計 -->
+        <div class="slds-grid slds-wrap slds-gutters slds-m-top_medium">
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+            <dl class="slds-dl_horizontal slds-text-body_small">
+              <dt class="slds-dl_horizontal__label">納期</dt>
+              <dd class="slds-dl_horizontal__detail">{quote.deliveryDate}</dd>
+              <dt class="slds-dl_horizontal__label">納入場所</dt>
+              <dd class="slds-dl_horizontal__detail">{quote.deliveryPlace}</dd>
+              <dt class="slds-dl_horizontal__label">支払条件</dt>
+              <dd class="slds-dl_horizontal__detail">{quote.paymentTerms}</dd>
+              <dt class="slds-dl_horizontal__label">見積有効期限</dt>
+              <dd class="slds-dl_horizontal__detail">{expirationDateText}</dd>
+            </dl>
+          </div>
+
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+            <table class="slds-table slds-table_bordered" aria-label="金額集計">
+              <tbody>
+                <tr>
+                  <th scope="row">小計(税抜)</th>
+                  <td class="slds-text-align_right" data-id="subtotal">
+                    {subtotalText} 円
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">10%対象額</th>
+                  <td class="slds-text-align_right">{taxableBase10Text} 円</td>
+                </tr>
+                <tr>
+                  <th scope="row">消費税(10%)</th>
+                  <td class="slds-text-align_right">{taxAmount10Text} 円</td>
+                </tr>
+                <template lwc:if={hasReducedTaxRate}>
+                  <tr data-id="taxable-base-8-row">
+                    <th scope="row">8%対象額</th>
+                    <td class="slds-text-align_right">{taxableBase8Text} 円</td>
+                  </tr>
+                  <tr data-id="tax-amount-8-row">
+                    <th scope="row">消費税(8%)</th>
+                    <td class="slds-text-align_right">{taxAmount8Text} 円</td>
+                  </tr>
+                </template>
+                <tr class="quote-preview__grand-total">
+                  <th scope="row">合計金額(税込)</th>
+                  <td class="slds-text-align_right" data-id="summary-total">
+                    {totalAmountText} 円
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 備考・振込先 -->
+        <template lwc:if={quote.notes}>
+          <div class="slds-m-top_medium">
+            <p class="slds-text-title_caps">備考</p>
+            <p class="quote-preview__notes slds-text-body_small">
+              {quote.notes}
+            </p>
+          </div>
+        </template>
+        <template lwc:if={issuer.bankAccount}>
+          <div class="slds-m-top_small">
+            <p class="slds-text-title_caps">お振込先</p>
+            <p class="slds-text-body_small">{issuer.bankAccount}</p>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    <!-- 操作ボタン -->
+    <div
+      class="slds-grid slds-grid_align-end slds-m-top_medium slds-p-around_x-small slds-border_top"
+    >
+      <lightning-button
+        label="閉じる"
+        variant="neutral"
+        class="slds-m-right_x-small"
+        onclick={handleClose}
+      ></lightning-button>
+      <lightning-button
+        label={downloadButtonLabel}
+        variant="brand"
+        icon-name="utility:download"
+        disabled={isDownloadDisabled}
+        data-id="download-button"
+        onclick={handleDownloadPdf}
+      ></lightning-button>
+    </div>
+
+    <!-- PDF生成中(フォント約2.9MBの初回ロードを含む) -->
+    <template lwc:if={isGenerating}>
+      <lightning-spinner
+        alternative-text="PDFを生成中"
+        size="medium"
+        data-id="generating-spinner"
+      ></lightning-spinner>
+    </template>
+  </div>
+</template>

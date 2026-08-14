@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description
+  >見積書に印字する自社(発行元)情報。組織ごとに設定できるようハードコードしない。</description>
+    <label>見積発行元情報</label>
+    <pluralLabel>見積発行元情報</pluralLabel>
+    <visibility>Public</visibility>
+</CustomObject>

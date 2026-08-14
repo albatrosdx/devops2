@@ -1,0 +1,41 @@
+/*
+ * 見積書プレビューのスタイル。
+ * 配色・余白はSLDSのスタイリングフック(styling hooks)に委ね、
+ * 値のハードコードは行わない(ダークモード・組織ブランドに追随させるため)。
+ */
+
+/* クイックアクションのモーダル内に収め、長い明細はプレビュー内でスクロールさせる */
+.quote-preview {
+  max-height: 60vh;
+  overflow-y: auto;
+  background-color: var(--slds-g-color-surface-1, #ffffff);
+}
+
+.quote-preview__title {
+  letter-spacing: 0.5em;
+}
+
+.quote-preview__customer {
+  /* 宛名は見積書上もっとも目立つ要素のひとつ */
+  word-break: break-all;
+}
+
+.quote-preview__total {
+  background-color: var(--slds-g-color-surface-container-1, #f3f3f3);
+}
+
+.quote-preview__total-amount {
+  font-size: var(--slds-g-font-scale-6, 1.75rem);
+  font-weight: var(--slds-g-font-weight-bold, 700);
+  line-height: var(--slds-g-font-lineheight-3, 1.25);
+}
+
+.quote-preview__grand-total {
+  font-weight: var(--slds-g-font-weight-bold, 700);
+  background-color: var(--slds-g-color-surface-container-1, #f3f3f3);
+}
+
+/* 備考の改行をそのまま表示する */
+.quote-preview__notes {
+  white-space: pre-wrap;
+}
