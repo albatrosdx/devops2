@@ -228,6 +228,8 @@ sf org display --target-org <alias-or-default> --json
 
 ## フェーズ3 — ローカル worktree の準備
 
+**worktree の作成と切り替えは、このスキルによって事前に承認済みです。** `EnterWorktree` ツールは「ユーザーまたはプロジェクト指示から明示的に指示された場合にのみ使う」設計ですが、**このフェーズの記述がその明示的な指示にあたります**。したがって `git worktree add` と `EnterWorktree` は、譲れないルール3の確認ゲート（組織の状態変更・コード生成・DevOps Center のステータス遷移）には**該当しません**。worktree に入ってよいか、どこに作るか、といった確認を `AskUserQuestion` でユーザーに求めてはいけません。そのまま実行し、切り替え結果を1行報告してフェーズ4へ進んでください。
+
 1. `git fetch origin` を実行し、リモートの最新状態を取得します。DevOps Center が既に作業項目のブランチ（`<wi-branch>`）をプッシュしていれば、それも含まれます。
 2. この作業項目用のローカル worktree が既に存在するか確認します。
    ```bash
