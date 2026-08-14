@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<StaticResource xmlns="http://soap.sforce.com/2006/04/metadata">
+    <cacheControl>Public</cacheControl>
+    <contentType>text/javascript</contentType>
+    <description>Noto Sans JP Regular を JIS X 0208(7,423字)へサブセット化した base64 フォント。jsPDF の addFileToVFS 用。静的リソースの5MB上限に収めるためのサブセット化であり、scripts/font/build-japanese-font.py で再生成できる。SIL Open Font License 1.1。</description>
+</StaticResource>
