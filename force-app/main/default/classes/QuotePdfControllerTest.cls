@@ -8,9 +8,22 @@
  * - 宛名: CustomerName__c の有無による customerName の切り替え
  * - 異常系: null / 別オブジェクトのId / 存在しない見積Id
  * - 権限: 参照権限のないユーザーからのアクセス
+ *
+ * 【実行ユーザーについて】
+ * 見積・見積明細のカスタム項目の項目レベルセキュリティ(FLS)は QuoteManagement 権限セット
+ * だけが付与する。システム管理者プロファイルには FLS が自動付与されないため、
+ * 権限セット未割り当ての組織(本番組織や check-only 検証)ではデプロイユーザーのまま
+ * DML/参照を行うと項目にアクセスできず失敗する。
+ * そのため、テストデータの作成とコントローラの呼び出しは QuoteManagement 権限セットを
+ * 割り当てた専用のテストユーザーとして System.runAs で実行する。
  */
 @isTest
 private class QuotePdfControllerTest {
+  // ---------- 実行ユーザー ----------
+  /** 見積のFLSを付与する権限セットのAPI参照名 */
+  private static final String PERMISSION_SET_NAME = 'QuoteManagement';
+  private static final String RUNNER_ALIAS = 'qpdfr';
+
   // ---------- テストデータ識別用 ----------
   private static final String ACCOUNT_NAME = 'テスト取引先株式会社';
   private static final String SUBJECT_STANDARD = 'テスト見積_明細3行';
@@ -99,24 +112,30 @@ private class QuotePdfControllerTest {
 
   @TestSetup
   static void setupTestData() {
+    // 権限セットを割り当てたテストユーザーを先に作成する(設定オブジェクトのDMLを分離するため)
+    User runner = createRunnerUser();
+
     Account account = buildAccount();
     insert account;
 
     Contact contact = buildContact(account.Id);
     insert contact;
 
-    List<Quote__c> quotes = new List<Quote__c>{
-      buildQuote(account.Id, contact.Id, SUBJECT_STANDARD, null),
-      buildQuote(account.Id, null, SUBJECT_NO_LINE, null),
-      buildQuote(account.Id, null, SUBJECT_CUSTOM_NAME, CUSTOM_ADDRESSEE),
-      buildQuote(account.Id, null, SUBJECT_ROUNDING, null)
-    };
-    insert quotes;
+    // 見積・見積明細のFLSは権限セット経由でしか付与されないため、テストユーザーとして作成する
+    System.runAs(runner) {
+      List<Quote__c> quotes = new List<Quote__c>{
+        buildQuote(account.Id, contact.Id, SUBJECT_STANDARD, null),
+        buildQuote(account.Id, null, SUBJECT_NO_LINE, null),
+        buildQuote(account.Id, null, SUBJECT_CUSTOM_NAME, CUSTOM_ADDRESSEE),
+        buildQuote(account.Id, null, SUBJECT_ROUNDING, null)
+      };
+      insert quotes;
 
-    List<QuoteLineItem__c> lines = new List<QuoteLineItem__c>();
-    lines.addAll(buildStandardLines(quotes[0].Id));
-    lines.addAll(buildRoundingLines(quotes[3].Id));
-    insert lines;
+      List<QuoteLineItem__c> lines = new List<QuoteLineItem__c>();
+      lines.addAll(buildStandardLines(quotes[0].Id));
+      lines.addAll(buildRoundingLines(quotes[3].Id));
+      insert lines;
+    }
   }
 
   /**
@@ -126,14 +145,20 @@ private class QuotePdfControllerTest {
   @isTest
   static void shouldReturnHeaderAndLines_WhenQuoteHasThreeLineItems() {
     // Given
-    Id quoteId = quoteIdBySubject(SUBJECT_STANDARD);
-    Contact expectedContact = [SELECT Name FROM Contact LIMIT 1];
+    User runner = runnerUser();
 
     // When
+    QuotePdfController.QuotePdfData data;
+    // 取引先責任者名の姓名の並びは実行ユーザーのロケールで変わるため、
+    // 期待値も同じユーザーコンテキストで取得する
+    Contact expectedContact;
     Test.startTest();
-    QuotePdfController.QuotePdfData data = QuotePdfController.getQuotePdfData(
-      quoteId
-    );
+    System.runAs(runner) {
+      expectedContact = [SELECT Name FROM Contact LIMIT 1];
+      data = QuotePdfController.getQuotePdfData(
+        quoteIdBySubject(SUBJECT_STANDARD)
+      );
+    }
     Test.stopTest();
 
     // Then: ヘッダ
@@ -260,13 +285,16 @@ private class QuotePdfControllerTest {
   @isTest
   static void shouldReturnRateBasedTotals_WhenLineItemsHaveMixedTaxRates() {
     // Given
-    Id quoteId = quoteIdBySubject(SUBJECT_STANDARD);
+    User runner = runnerUser();
 
     // When
+    QuotePdfController.QuotePdfData data;
     Test.startTest();
-    QuotePdfController.QuotePdfData data = QuotePdfController.getQuotePdfData(
-      quoteId
-    );
+    System.runAs(runner) {
+      data = QuotePdfController.getQuotePdfData(
+        quoteIdBySubject(SUBJECT_STANDARD)
+      );
+    }
     Test.stopTest();
 
     // Then
@@ -322,13 +350,16 @@ private class QuotePdfControllerTest {
   @isTest
   static void shouldRoundTaxOncePerRate_WhenMultipleLineItemsShareSameRate() {
     // Given
-    Id quoteId = quoteIdBySubject(SUBJECT_ROUNDING);
+    User runner = runnerUser();
 
     // When
+    QuotePdfController.QuotePdfData data;
     Test.startTest();
-    QuotePdfController.QuotePdfData data = QuotePdfController.getQuotePdfData(
-      quoteId
-    );
+    System.runAs(runner) {
+      data = QuotePdfController.getQuotePdfData(
+        quoteIdBySubject(SUBJECT_ROUNDING)
+      );
+    }
     Test.stopTest();
 
     // Then
@@ -373,13 +404,16 @@ private class QuotePdfControllerTest {
   @isTest
   static void shouldReturnEmptyLines_WhenQuoteHasNoLineItem() {
     // Given
-    Id quoteId = quoteIdBySubject(SUBJECT_NO_LINE);
+    User runner = runnerUser();
 
     // When
+    QuotePdfController.QuotePdfData data;
     Test.startTest();
-    QuotePdfController.QuotePdfData data = QuotePdfController.getQuotePdfData(
-      quoteId
-    );
+    System.runAs(runner) {
+      data = QuotePdfController.getQuotePdfData(
+        quoteIdBySubject(SUBJECT_NO_LINE)
+      );
+    }
     Test.stopTest();
 
     // Then
@@ -405,13 +439,16 @@ private class QuotePdfControllerTest {
   @isTest
   static void shouldUseAccountName_WhenCustomerNameIsBlank() {
     // Given
-    Id quoteId = quoteIdBySubject(SUBJECT_STANDARD);
+    User runner = runnerUser();
 
     // When
+    QuotePdfController.QuotePdfData data;
     Test.startTest();
-    QuotePdfController.QuotePdfData data = QuotePdfController.getQuotePdfData(
-      quoteId
-    );
+    System.runAs(runner) {
+      data = QuotePdfController.getQuotePdfData(
+        quoteIdBySubject(SUBJECT_STANDARD)
+      );
+    }
     Test.stopTest();
 
     // Then
@@ -428,13 +465,16 @@ private class QuotePdfControllerTest {
   @isTest
   static void shouldUseCustomerName_WhenCustomerNameIsFilled() {
     // Given
-    Id quoteId = quoteIdBySubject(SUBJECT_CUSTOM_NAME);
+    User runner = runnerUser();
 
     // When
+    QuotePdfController.QuotePdfData data;
     Test.startTest();
-    QuotePdfController.QuotePdfData data = QuotePdfController.getQuotePdfData(
-      quoteId
-    );
+    System.runAs(runner) {
+      data = QuotePdfController.getQuotePdfData(
+        quoteIdBySubject(SUBJECT_CUSTOM_NAME)
+      );
+    }
     Test.stopTest();
 
     // Then
@@ -506,18 +546,21 @@ private class QuotePdfControllerTest {
       Quote__c.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED)
         .getKeyPrefix() + '000000000AAA'
     );
+    User runner = runnerUser();
 
-    // When / Then
+    // When / Then: 権限のあるユーザーで実行し、権限不足ではなく「該当なし」で失敗することを確かめる
     Test.startTest();
-    try {
-      QuotePdfController.getQuotePdfData(missingQuoteId);
-      Assert.fail('存在しない見積Idでは AuraHandledException が発生するはず');
-    } catch (AuraHandledException e) {
-      Assert.areEqual(
-        QuotePdfController.MSG_NOT_FOUND,
-        e.getMessage(),
-        '見積が見つからない旨のメッセージが返ること'
-      );
+    System.runAs(runner) {
+      try {
+        QuotePdfController.getQuotePdfData(missingQuoteId);
+        Assert.fail('存在しない見積Idでは AuraHandledException が発生するはず');
+      } catch (AuraHandledException e) {
+        Assert.areEqual(
+          QuotePdfController.MSG_NOT_FOUND,
+          e.getMessage(),
+          '見積が見つからない旨のメッセージが返ること'
+        );
+      }
     }
     Test.stopTest();
   }
@@ -530,7 +573,11 @@ private class QuotePdfControllerTest {
   @isTest
   static void shouldThrowAuraHandledException_WhenUserHasNoAccess() {
     // Given
-    Id quoteId = quoteIdBySubject(SUBJECT_STANDARD);
+    User runner = runnerUser();
+    Id quoteId;
+    System.runAs(runner) {
+      quoteId = quoteIdBySubject(SUBJECT_STANDARD);
+    }
     // プロファイル名は組織の言語設定で変わるため、名前ではなく権限で特定する
     Profile restrictedProfile = [
       SELECT Id
@@ -538,7 +585,11 @@ private class QuotePdfControllerTest {
       WHERE PermissionsModifyAllData = FALSE AND UserType = 'Standard'
       LIMIT 1
     ];
-    User restrictedUser = buildUser(restrictedProfile.Id);
+    User restrictedUser = buildUser(
+      restrictedProfile.Id,
+      uniqueUsername('quotepdf.restricted'),
+      'qpdft'
+    );
     insert restrictedUser;
 
     // When / Then
@@ -560,6 +611,66 @@ private class QuotePdfControllerTest {
   }
 
   // ===================== ヘルパー =====================
+
+  /**
+   * QuoteManagement 権限セットを割り当てたテスト実行用ユーザーを作成する。
+   *
+   * プロファイル名は組織の言語設定で変わるため、名前ではなく権限で特定する。
+   * User / PermissionSetAssignment は設定オブジェクトのため、通常オブジェクトとの
+   * 混在DML(MIXED_DML_OPERATION)にならないよう現在ユーザーの runAs 内で登録する。
+   */
+  private static User createRunnerUser() {
+    Profile adminProfile = [
+      SELECT Id
+      FROM Profile
+      WHERE PermissionsModifyAllData = TRUE AND UserType = 'Standard'
+      LIMIT 1
+    ];
+    List<PermissionSet> permissionSets = [
+      SELECT Id
+      FROM PermissionSet
+      WHERE Name = :PERMISSION_SET_NAME
+      LIMIT 1
+    ];
+    Assert.isFalse(
+      permissionSets.isEmpty(),
+      PERMISSION_SET_NAME + ' 権限セットが組織に存在すること'
+    );
+
+    User runner = buildUser(adminProfile.Id, runnerUsername(), RUNNER_ALIAS);
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      insert runner;
+      insert new PermissionSetAssignment(
+        AssigneeId = runner.Id,
+        PermissionSetId = permissionSets[0].Id
+      );
+    }
+    return runner;
+  }
+
+  /** @TestSetup で作成したテスト実行用ユーザーを取得する。 */
+  private static User runnerUser() {
+    return [SELECT Id FROM User WHERE Username = :runnerUsername() LIMIT 1];
+  }
+
+  /**
+   * テスト実行用ユーザーのユーザー名。
+   * ユーザー名はSalesforce全体で一意である必要があるため組織Idを含める。
+   */
+  private static String runnerUsername() {
+    return 'quotepdf.runner.' +
+      UserInfo.getOrganizationId().toLowerCase() +
+      '@example.com.invalid';
+  }
+
+  /** 他組織と衝突しない使い捨てのユーザー名を組み立てる。 */
+  private static String uniqueUsername(String prefix) {
+    return prefix +
+      '.' +
+      String.valueOf(DateTime.now().getTime()) +
+      String.valueOf(Math.abs(Crypto.getRandomInteger())) +
+      '@example.com.invalid';
+  }
 
   /** 件名からテスト用見積のIdを取得する。 */
   private static Id quoteIdBySubject(String subject) {
@@ -661,17 +772,14 @@ private class QuotePdfControllerTest {
     };
   }
 
-  /** 参照権限を持たないテストユーザーを組み立てる。 */
-  private static User buildUser(Id profileId) {
-    String uniqueKey =
-      String.valueOf(DateTime.now().getTime()) +
-      String.valueOf(Math.abs(Crypto.getRandomInteger()));
+  /** テストユーザーを組み立てる。 */
+  private static User buildUser(Id profileId, String username, String alias) {
     return new User(
       ProfileId = profileId,
       LastName = 'テスト',
       Email = 'quotepdf.test@example.com',
-      Username = 'quotepdf.' + uniqueKey + '@example.com.invalid',
-      Alias = 'qpdft',
+      Username = username,
+      Alias = alias,
       TimeZoneSidKey = 'Asia/Tokyo',
       LocaleSidKey = 'ja_JP',
       EmailEncodingKey = 'UTF-8',
